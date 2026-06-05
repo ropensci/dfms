@@ -21,7 +21,7 @@ BugReports: https://github.com/ropensci/dfms/issues
 Depends: R (>= 4.1.0)
 Imports: Rcpp (>= 1.0.1), collapse (>= 2.0.0)
 LinkingTo: Rcpp, RcppArmadillo
-Suggests: xts, vars, magrittr, testthat (>= 3.0.0), knitr, rmarkdown, covr
+Suggests: xts, vars, magrittr, testthat (>= 3.0.0), knitr, rmarkdown, covr, dlm, KFAS
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
