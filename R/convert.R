@@ -6,6 +6,7 @@
 #' and prediction-interval functionality.
 #' @param object an object of class 'dfm'.
 #' @param to character, target package format: \code{"dlm"} or \code{"KFAS"}.
+#' @param ... other arguments
 #' @details
 #' The DFM is defined by the state space model:
 #' \itemize{
@@ -59,7 +60,7 @@ convert <- function(object, ...) {
 
 #' @rdname convert
 #' @export
-convert.dfm <- function(object, to=c("KFAS", "dlm")) {
+convert.dfm <- function(object, to=c("KFAS", "dlm"), ...) {
   to <- match.arg(to)
   stopifnot(inherits(object, "dfm"))
   nl <- dim(object$A)[1]
@@ -71,7 +72,7 @@ convert.dfm <- function(object, to=c("KFAS", "dlm")) {
   Qt[1:nl, 1:nl] <- object$Q
   Tt[1:nl, 1:n] <- object$A
   if (nar > 1) {
-    Tt[(nl + 1):n, 1:(nl * (nar - 1))] <- diag(1, nl * (nar - 1), nl*(nar - 1)) 
+    Tt[(nl + 1):n, 1:(nl * (nar - 1))] <- diag(1, nl * (nar - 1), nl*(nar - 1))
   }
   a1 <- matrix(rep(object$F_qml[1,], nar), nrow=n)
   Zt <-  matrix(c(object$C, rep(0, ni * (nar - 1) * nl)), ncol = n)

@@ -4,7 +4,8 @@ Title: Dynamic Factor Models
 Authors@R: c(person("Sebastian", "Krantz", role = c("aut", "cre"), email = "sebastian.krantz@graduateinstitute.ch"),
              person("Rytis", "Bagdziunas", role = "aut"),
              person("Santtu", "Tikka", role = "rev"),
-             person("Eli", "Holmes", role = "rev"))
+             person("Eli", "Holmes", role = "rev"), 
+             person("Christian", "Klettner", role = "ctb"))
 Description: Efficient estimation of Dynamic Factor Models using the Expectation Maximization (EM) algorithm 
   or Two-Step (2S) estimation, supporting datasets with missing data and mixed-frequency nowcasting applications. 
   Factors follow a stationary VAR process of order p. Estimation options include: running the Kalman Filter and 

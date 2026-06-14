@@ -7,10 +7,12 @@
 \usage{
 convert(object, ...)
 
-\method{convert}{dfm}(object, to = c("KFAS", "dlm"))
+\method{convert}{dfm}(object, to = c("KFAS", "dlm"), ...)
 }
 \arguments{
 \item{object}{an object of class 'dfm'.}
+
+\item{...}{other arguments}
 
 \item{to}{character, target package format: \code{"dlm"} or \code{"KFAS"}.}
 }
