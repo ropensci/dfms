@@ -1,10 +1,11 @@
 Package: dfms
-Version: 1.0.0
+Version: 1.0.1
 Title: Dynamic Factor Models
 Authors@R: c(person("Sebastian", "Krantz", role = c("aut", "cre"), email = "sebastian.krantz@graduateinstitute.ch"),
              person("Rytis", "Bagdziunas", role = "aut"),
              person("Santtu", "Tikka", role = "rev"),
-             person("Eli", "Holmes", role = "rev"))
+             person("Eli", "Holmes", role = "rev"), 
+             person("Christian", "Klettner", role = "ctb"))
 Description: Efficient estimation of Dynamic Factor Models using the Expectation Maximization (EM) algorithm 
   or Two-Step (2S) estimation, supporting datasets with missing data and mixed-frequency nowcasting applications. 
   Factors follow a stationary VAR process of order p. Estimation options include: running the Kalman Filter and 
@@ -21,11 +22,11 @@ BugReports: https://github.com/ropensci/dfms/issues
 Depends: R (>= 4.1.0)
 Imports: Rcpp (>= 1.0.1), collapse (>= 2.0.0)
 LinkingTo: Rcpp, RcppArmadillo
-Suggests: xts, vars, magrittr, testthat (>= 3.0.0), knitr, rmarkdown, covr
+Suggests: xts, vars, magrittr, testthat (>= 3.0.0), knitr, rmarkdown, covr, dlm, KFAS
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE, roclets = c ("namespace", "rd", "srr::srr_stats_roclet"))
-RoxygenNote: 7.3.2
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0
