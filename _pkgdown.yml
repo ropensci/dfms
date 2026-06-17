@@ -70,8 +70,9 @@ reference:
   - FIS
   - SKFS
 - title: "Helper Functions"
-  desc: "Fast VAR, matrix inverses, imputation/removal of missing values in multivariate time series, and convergence check for EM algorithm."
+  desc: "Convert 'dfm' object to other popular state space representations. Fast VAR, matrix inverses, imputation/removal of missing values in multivariate time series, and convergence check for EM algorithm."
 - contents:
+  - convert
   - .VAR
   - tsnarmimp
   - ainv
