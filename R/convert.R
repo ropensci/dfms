@@ -78,11 +78,17 @@ convert.dfm <- function(object, to=c("KFAS", "dlm"), ...) {
   Zt <-  matrix(c(object$C, rep(0, ni * (nar - 1) * nl)), ncol = n)
   Rt <- diag(1, n, n)
   Ht <- object$R
-  y <- object$X_imp
-  if (to=="KFAS") {
-    KFAS::SSModel(y ~ -1 +
-                    SSMcustom(Z = Zt, T = Tt, R = Rt, Q = Qt, a1 = a1, P1 = P1t, P1inf = P1inf),
-                  H = Ht)
+  y <- as.data.frame(object$X_imp)
+  if (is.null(colnames(y))) colnames(y) <- paste0("y", seq_len(ni))
+  nobs <- nrow(y)
+  if (to == "KFAS") {
+    SSMcustom <- KFAS::SSMcustom
+    form <- stats::as.formula(paste0(
+      "cbind(", paste(colnames(y), collapse = ", "), ") ~ -1 + ",
+      "SSMcustom(Z = Zt, T = Tt, R = Rt, Q = Qt, a1 = a1, ",
+      "P1 = P1t, P1inf = P1inf, index = seq_len(", ni, "), n = ", nobs, ")"
+    ))
+    KFAS::SSModel(form, data = y, H = Ht)
   } else {
     dlm::dlm(list(m0 = a1, C0 = P1t, FF = Zt, V = Ht, GG = Tt, W = Qt))
   }

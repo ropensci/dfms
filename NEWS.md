@@ -1,3 +1,8 @@
+# dfms 1.0.1
+
+* New function `convert()` to export `dfm` objects to `dlm` or `KFAS` state-space formats, enabling their forecasting, smoothing, and prediction-interval functionality. Thanks @kletts (#106).
+* Fixed `convert(..., to = "KFAS")` for multivariate models.
+
 # dfms 1.0.0
 
 * *dfms* is now part of [rOpenSci](https://ropensci.org/) – following completion of a scientific review by @eeholmes and @santikka. This means the repo shifted to [ropensci/dfms](https://github.com/ropensci/dfms) and the docs (now in rOpenSci style) to [docs.ropensci.org/dfms](https://docs.ropensci.org/dfms/). 
