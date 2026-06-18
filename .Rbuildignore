@@ -22,3 +22,7 @@ _snaps$
 ^\.DS_Store$
 ^vignettes/dynamic_factor_models
 ^man/figures
+^Rplots\.pdf$
+^\.positai$
+^vignettes/cache
+^vignettes/figures
