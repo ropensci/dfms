@@ -32,7 +32,7 @@ head(colnames(BM14_M))
 plot(scale(BM14_M), lwd = 1)
 ```
 
-<img src="figure/unnamed-chunk-2-1.png" width="100%" height="auto" />
+<img src="https://raw.githubusercontent.com/ropensci/dfms/main/vignettes/figure/unnamed-chunk-2-1.png" width="100%" height="auto" />
 
 The data frame `BM14_Models` provides information about the series^[Both about the monthly ones and quarterly series contained in `BM14_Q`. The order of rows in `BM14_Models` matches the column order of series in `merge(BM14_M, BM14_Q)`.], and the various models estimated by BM14.
 
@@ -67,7 +67,7 @@ BM14_M_diff <- diff(BM14_M)
 plot(scale(BM14_M_diff), lwd = 1)
 ```
 
-<img src="figure/unnamed-chunk-4-1.png" width="100%" height="auto" />
+<img src="https://raw.githubusercontent.com/ropensci/dfms/main/vignettes/figure/unnamed-chunk-4-1.png" width="100%" height="auto" />
 
 ## Determining the Structure of the Model
 
@@ -85,7 +85,7 @@ print(ic)
 plot(ic)
 ```
 
-<img src="figure/unnamed-chunk-5-1.png" width="100%" height="auto" />
+<img src="https://raw.githubusercontent.com/ropensci/dfms/main/vignettes/figure/unnamed-chunk-5-1.png" width="100%" height="auto" />
 
 Another option is to use a Screeplot to gauge the number of factors by looking for a kink in the plot. A mathematical procedure for finding the kink was suggested by Onatski (2010)^[Onatski, A. (2010). Determining the number of factors from empirical distribution of eigenvalues. *The Review of Economics and Statistics, 92*(4), 1004-1016.], but this is currently not implemented in `ICr()`.
 
@@ -94,7 +94,7 @@ Another option is to use a Screeplot to gauge the number of factors by looking f
 screeplot(ic)
 ```
 
-<img src="figure/unnamed-chunk-6-1.png" width="100%" height="auto" />
+<img src="https://raw.githubusercontent.com/ropensci/dfms/main/vignettes/figure/unnamed-chunk-6-1.png" width="100%" height="auto" />
 
 Based on both the information criteria and the Screeplot, I gauge that a model with 4 factors should be estimated, as factors, 5, 6 and 7 do not add much to the explanatory power of the model. Next to the number of factors, the lag order of the factor-VAR of the transition equation should be estimated (the default is 1 lag). This can be done using the `VARselect()` function from the *vars* package, with PCA factor estimates reported by `ICr()`.
 
@@ -147,7 +147,7 @@ print(model_m)
 plot(model_m)
 ```
 
-<img src="figure/unnamed-chunk-8-1.png" width="100%" height="auto" />
+<img src="https://raw.githubusercontent.com/ropensci/dfms/main/vignettes/figure/unnamed-chunk-8-1.png" width="100%" height="auto" />
 
 The model can be investigated using `summary()`, which returns an object of class 'dfm_summary' containing the system matrices and summary statistics of the factors and the residuals in the measurement equation, as well as the R-Squared of the factor model for individual series. The print method automatically adjusts the amount of information printed to the data size. For large databases with more than 40 series, no series-level statistics are printed.
 
@@ -213,13 +213,13 @@ Apart from the model summary, the *dfm* methods `residuals()` and `fitted()` ret
 plot(resid(model_m, orig.format = TRUE), lwd = 1)
 ```
 
-<img src="figure/unnamed-chunk-10-1.png" width="100%" height="auto" />
+<img src="https://raw.githubusercontent.com/ropensci/dfms/main/vignettes/figure/unnamed-chunk-10-1.png" width="100%" height="auto" />
 
 ``` r
 plot(fitted(model_m, orig.format = TRUE), lwd = 1)
 ```
 
-<img src="figure/unnamed-chunk-10-2.png" width="100%" height="auto" />
+<img src="https://raw.githubusercontent.com/ropensci/dfms/main/vignettes/figure/unnamed-chunk-10-2.png" width="100%" height="auto" />
 
 
 
@@ -230,7 +230,7 @@ Another way to examine the factor model visually is to plot the Quasi-Maximum-Li
 plot(model_m, method = "all", type = "individual")
 ```
 
-<img src="figure/unnamed-chunk-11-1.png" width="100%" height="auto" />
+<img src="https://raw.githubusercontent.com/ropensci/dfms/main/vignettes/figure/unnamed-chunk-11-1.png" width="100%" height="auto" />
 
 The plot with the various estimates shows that the QML estimates are more volatile in the initial periods where there are many missing series, but less volatile in the latter periods. In general, QML estimates may not always be superior across the entire data range to Two-Step and PCA estimates. Often, Two-Step estimates also provide similar forecasting performance, and are much faster to estimate using `DFM(BM14_M_diff, r = 4, p = 3, em.method = "none")`.
 
@@ -312,7 +312,7 @@ These forecasts can also be visualized using a plot method. By default the entir
 plot(fc, xlim = c(320, 370))
 ```
 
-<img src="figure/unnamed-chunk-14-1.png" width="100%" height="auto" />
+<img src="https://raw.githubusercontent.com/ropensci/dfms/main/vignettes/figure/unnamed-chunk-14-1.png" width="100%" height="auto" />
 
 By default, `predict()` uses the QML factor estimates (if available). We can however also predict with PCA or TwoStep estimates using, e.g., `predict(model_m, h = 12, method = "2s")`.
 
@@ -383,7 +383,7 @@ print(model_mq)
 plot(model_mq)
 ```
 
-<img src="figure/MQ-1.png" width="100%" height="auto" />
+<img src="https://raw.githubusercontent.com/ropensci/dfms/main/vignettes/figure/MQ-1.png" width="100%" height="auto" />
 
 ## Modeling AR(1) Idiosyncratic Errors
 
@@ -451,7 +451,7 @@ matplot(model_mq_ar1$e[-(1:120), 1:5], type = "l", lty = 1,
         xlab = "Time", ylab = "Error")
 ```
 
-<img src="figure/unnamed-chunk-17-1.png" width="100%" height="auto" />
+<img src="https://raw.githubusercontent.com/ropensci/dfms/main/vignettes/figure/unnamed-chunk-17-1.png" width="100%" height="auto" />
 
 In general, Doz et al. (2011, 2012) show that in the presence of serial correlation, the factors are still consistently estimated as $n, T \to \infty$ using an exact DFM specification. Thus modeling serial correlation is particularly important in smaller samples. Banbura & Modugno (2014) also show that modeling the serial correlation improves forecast accuracy, but only at short horizons.
 
