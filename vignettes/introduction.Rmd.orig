@@ -2,7 +2,9 @@
 title: "Introduction to dfms"
 author: "Sebastian Krantz"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    self_contained: false
 vignette: >
   %\VignetteIndexEntry{Introduction to dfms}
   %\VignetteEngine{knitr::rmarkdown}
@@ -15,7 +17,7 @@ knitr::opts_chunk$set(
   cache = TRUE,
   fig.width = 7,
   fig.height = 5,
-  dpi = 300,
+  dpi = 150,
   comment = "#>"
 )
 
