@@ -25,4 +25,4 @@ _snaps$
 ^Rplots\.pdf$
 ^\.positai$
 ^vignettes/cache
-^vignettes/figures
+^vignettes/figure
