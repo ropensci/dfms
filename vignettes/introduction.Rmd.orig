@@ -1,7 +1,7 @@
 ---
 title: "Introduction to dfms"
 author: "Sebastian Krantz"
-date: "2026-06-18"
+date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Introduction to dfms}
@@ -9,48 +9,40 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  cache = TRUE,
+  fig.width = 7,
+  fig.height = 5,
+  dpi = 300,
+  comment = "#>"
+)
+
+opt <- options(max.print = 70)
+```
+
 *dfms* provides a user friendly and computationally efficient approach to estimate linear Gaussian Dynamic Factor Models in R. The package is not geared at any specific application, and can be used for dimensionality reduction, forecasting and nowcasting systems of time series. The use of the package is facilitated by a comprehensive set of methods to explore/plot models and extract results.
 
-
-``` r
+```{r setup, message=FALSE}
 library(dfms)
 library(xts)
 ```
 
 This vignette walks through the main features of the package. The data provided in the package in *xts* format is taken from Banbura and Modugno (2014)^[Banbura, M., & Modugno, M. (2014). Maximum likelihood estimation of factor models on datasets with arbitrary pattern of missing data. *Journal of Applied Econometrics, 29*(1), 133-160.], henceforth BM14, and covers the Euro Area from January 1980 through September 2009.
 
-
-``` r
+```{r}
 # Using the monthly series from BM14
 dim(BM14_M)
-#> [1] 357  92
 range(index(BM14_M))
-#> [1] "1980-01-31" "2009-09-30"
 head(colnames(BM14_M))
-#> [1] "ip_total"       "ip_tot_cstr"    "ip_tot_cstr_en" "ip_constr"      "ip_im_goods"   
-#> [6] "ip_capital"
 plot(scale(BM14_M), lwd = 1)
 ```
 
-<img src="figure/unnamed-chunk-2-1.png" width="100%" height="auto" />
-
 The data frame `BM14_Models` provides information about the series^[Both about the monthly ones and quarterly series contained in `BM14_Q`. The order of rows in `BM14_Models` matches the column order of series in `merge(BM14_M, BM14_Q)`.], and the various models estimated by BM14.
 
-
-``` r
+```{r}
 head(BM14_Models, 3)
-#>           series
-#> 1       ip_total
-#> 2    ip_tot_cstr
-#> 3 ip_tot_cstr_en
-#>                                                                                           label
-#> 1                                       IP-Total Industry - Working Day and Seasonally Adjusted
-#> 2              IP-Total Industry (Excluding Construction) - Working Day and Seasonally Adjusted
-#> 3 IP-Total Industry Excluding Construction and MIG Energy - Working Day and Seasonally Adjusted
-#>                           code freq log_trans small medium large
-#> 1 sts.m.i5.Y.PROD.NS0010.4.000    M      TRUE FALSE  FALSE  TRUE
-#> 2 sts.m.i5.Y.PROD.NS0020.4.000    M      TRUE  TRUE   TRUE  TRUE
-#> 3 sts.m.i5.Y.PROD.NS0021.4.000    M      TRUE FALSE  FALSE  TRUE
 
 # Using only monthly data
 BM14_Models_M <- subset(BM14_Models, freq == "M")
@@ -58,8 +50,7 @@ BM14_Models_M <- subset(BM14_Models, freq == "M")
 
 Prior to estimation, all data is differenced by BM14, and some series are log-differenced, as indicated by the `log_trans` column in `BM14_Models`. In general, *dfms* uses a stationary Kalman Filter with time-invariant system matrices, and therefore expects data to be stationary. Data is also scaled and centered^[Data must be scaled and centered because the Kalman Filter has no intercept term.] in the main `DFM()` function, thus this does not need to be done by the user.
 
-
-``` r
+```{r}
 library(magrittr)
 # log-transforming and first-differencing the data
 BM14_M[, BM14_Models_M$log_trans] %<>% log()
@@ -67,56 +58,27 @@ BM14_M_diff <- diff(BM14_M)
 plot(scale(BM14_M_diff), lwd = 1)
 ```
 
-<img src="figure/unnamed-chunk-4-1.png" width="100%" height="auto" />
-
 ## Determining the Structure of the Model
 
 Before estimating a model, the `ICr()` function can be applied to determine the number of factors. It computes 3 information criteria proposed in Bai and NG (2002)^[Bai, J., Ng, S. (2002). Determining the Number of Factors in Approximate Factor Models. *Econometrica, 70*(1), 191-221. <doi:10.1111/1468-0262.00273>], whereby the second criteria generally suggests the most parsimonious model.
 
-
-``` r
+```{r}
 ic <- ICr(BM14_M_diff)
-#> Missing values detected: imputing data with tsnarmimp() with default settings
 print(ic)
-#> Optimal Number of Factors (r) from Bai and Ng (2002) Criteria
-#> 
-#> IC1 IC2 IC3 
-#>   7   7  13
 plot(ic)
 ```
 
-<img src="figure/unnamed-chunk-5-1.png" width="100%" height="auto" />
-
 Another option is to use a Screeplot to gauge the number of factors by looking for a kink in the plot. A mathematical procedure for finding the kink was suggested by Onatski (2010)^[Onatski, A. (2010). Determining the number of factors from empirical distribution of eigenvalues. *The Review of Economics and Statistics, 92*(4), 1004-1016.], but this is currently not implemented in `ICr()`.
 
-
-``` r
+```{r}
 screeplot(ic)
 ```
 
-<img src="figure/unnamed-chunk-6-1.png" width="100%" height="auto" />
-
 Based on both the information criteria and the Screeplot, I gauge that a model with 4 factors should be estimated, as factors, 5, 6 and 7 do not add much to the explanatory power of the model. Next to the number of factors, the lag order of the factor-VAR of the transition equation should be estimated (the default is 1 lag). This can be done using the `VARselect()` function from the *vars* package, with PCA factor estimates reported by `ICr()`.
 
-
-``` r
+```{r}
 # Using vars::VARselect() with 4 principal components to estimate the VAR lag order
 vars::VARselect(ic$F_pca[, 1:4])
-#> $selection
-#> AIC(n)  HQ(n)  SC(n) FPE(n) 
-#>      4      3      3      4 
-#> 
-#> $criteria
-#>                 1          2          3          4          5          6          7          8
-#> AIC(n)   5.794184   5.585334   5.400083   5.370339   5.394026   5.379200   5.407519   5.403436
-#> HQ(n)    5.882720   5.744698   5.630276   5.671360   5.765875   5.821878   5.921025   5.987770
-#> SC(n)    6.016522   5.985541   5.978161   6.126287   6.327844   6.490887   6.697076   6.870863
-#> FPE(n) 328.386797 266.501718 221.456225 215.003864 220.219244 217.067620 223.429380 222.685797
-#>                 9         10
-#> AIC(n)   5.433963   5.476516
-#> HQ(n)    6.089126   6.202507
-#> SC(n)    7.079260   7.299683
-#> FPE(n) 229.808426 240.084376
 ```
 
 The selection thus suggests we should estimate a factor model with $r = 4$ factors and $p = 3$ lags^[Some authors like Doz, Giannone, and Reichlin (2012) additionally allow the number of transition error processes, termed 'dynamic factors' and given an extra parameter $q$, to be less than the number of 'static factors' $r$. I find this terminology confusing and the feature not very useful for most practical purposes, thus I have not implemented it in *dfms*.]. Before estimating the model I note that *dfms* does not deal with seasonality in series, thus it is recommended to also seasonally adjust data, e.g. using the *seasonal* package before estimation. BM14 only use seasonally adjusted series, thus this is not necessary with the example data provided.
@@ -125,81 +87,18 @@ The selection thus suggests we should estimate a factor model with $r = 4$ facto
 
 Estimation can then simply be done using the `DFM()` function with parameters $r$ and $p$^[Users can also choose from two different implementations of the EM algorithm using the argument `em.method`. The default is `em.method = "auto"`, which chooses the modified EM algorithm proposed by BM14 for missing data if `anyNA(X)`, and the plain EM implementation of Doz, Giannone and Reichlin (2012), henceforth DGR12, otherwise. The baseline implementation of DGR12 is typically more than 2x faster than BM14's method, and can also be used with data that has a few random missing values (< 5%), but gives wrong results with many and systematically missing data, such as ragged edges at the beginning or end of the sample or series at different frequencies. With complete datasets, both `em.method = "DGR"` and `em.method = "BM"` give identical factor estimates, and in this case `em.method = "DGR"` should be used.].
 
-
-``` r
+```{r}
 # Estimating the model with 4 factors and 3 lags using BM14's EM algorithm
 model_m <- DFM(BM14_M_diff, r = 4, p = 3)
-#> Converged after 26 iterations.
 print(model_m)
-#> Dynamic Factor Model: n = 92, T = 356, r = 4, p = 3, %NA = 25.8366
-#> 
-#> Factor Transition Matrix [A]
-#>      L1.f1   L1.f2   L1.f3   L1.f4   L2.f1   L2.f2   L2.f3   L2.f4   L3.f1   L3.f2   L3.f3
-#> f1  0.4139 -0.0122  0.7875  0.3325 -0.0914 -0.1474  0.1859 -0.3054  0.3228 -0.0710  0.0023
-#> f2 -0.1358  0.2381  0.1742  0.2223 -0.0090 -0.1529 -0.0251 -0.0191  0.1530  0.1581  0.0549
-#> f3  0.3392  0.2566 -0.0463 -0.4133 -0.1421 -0.0714 -0.2022  0.1173 -0.1204  0.0284  0.1685
-#> f4  0.3268  0.1578 -0.1243  0.2149  0.0107  0.0064 -0.0746 -0.0236 -0.1655 -0.0427 -0.1069
-#>      L3.f4
-#> f1  0.1806
-#> f2 -0.0381
-#> f3  0.1195
-#> f4  0.0079
 plot(model_m)
 ```
 
-<img src="figure/unnamed-chunk-8-1.png" width="100%" height="auto" />
-
 The model can be investigated using `summary()`, which returns an object of class 'dfm_summary' containing the system matrices and summary statistics of the factors and the residuals in the measurement equation, as well as the R-Squared of the factor model for individual series. The print method automatically adjusts the amount of information printed to the data size. For large databases with more than 40 series, no series-level statistics are printed.
 
-
-``` r
+```{r}
 dfm_summary <- summary(model_m)
-#> Warning in sqrt(1 - acm^2): NaNs produced
 print(dfm_summary) # Large model with > 40 series: defaults to compact = 2
-#> Dynamic Factor Model: n = 92, T = 356, r = 4, p = 3, %NA = 25.8366
-#> 
-#> Call:  DFM(X = BM14_M_diff, r = 4, p = 3)
-#> 
-#> Summary Statistics of Factors [F]
-#>       N     Mean   Median      SD       Min      Max
-#> f1  356   -0.054   0.3333  4.6456  -20.9539  13.2308
-#> f2  356   -0.031  -0.0728  2.6379    -9.317   6.9993
-#> f3  356  -0.0504   0.0814  3.5123    -13.65   17.588
-#> f4  356  -0.1345  -0.1719  2.4508   -9.8979  10.2893
-#> 
-#> Factor Transition Matrix [A]
-#>      L1.f1    L1.f2    L1.f3   L1.f4     L2.f1     L2.f2    L2.f3    L2.f4   L3.f1    L3.f2
-#> f1  0.4139 -0.01222  0.78747  0.3325 -0.091402 -0.147358  0.18593 -0.30539  0.3228 -0.07104
-#> f2 -0.1358  0.23813  0.17418  0.2223 -0.009044 -0.152925 -0.02514 -0.01912  0.1530  0.15809
-#> f3  0.3392  0.25655 -0.04625 -0.4133 -0.142128 -0.071381 -0.20221  0.11734 -0.1204  0.02844
-#> f4  0.3268  0.15782 -0.12431  0.2149  0.010684  0.006446 -0.07456 -0.02356 -0.1655 -0.04269
-#>        L3.f3     L3.f4
-#> f1  0.002269  0.180614
-#> f2  0.054876 -0.038129
-#> f3  0.168495  0.119479
-#> f4 -0.106921  0.007872
-#> 
-#> Factor Covariance Matrix [cov(F)]
-#>           f1        f2        f3        f4
-#> f1  21.5818    1.9628*  -4.9668*  -1.5043*
-#> f2   1.9628*   6.9585   -2.7590*  -1.5049*
-#> f3  -4.9668*  -2.7590*  12.3359    2.9879*
-#> f4  -1.5043*  -1.5049*   2.9879*   6.0067 
-#> 
-#> Factor Transition Error Covariance Matrix [Q]
-#>         u1      u2      u3      u4
-#> u1  9.3698  0.3902 -2.7169 -2.0670
-#> u2  0.3902  5.3407 -1.0810 -0.7602
-#> u3 -2.7169 -1.0810  7.2794  1.2365
-#> u4 -2.0670 -0.7602  1.2365  4.1717
-#> 
-#> Summary of Residual AR(1) Serial Correlations
-#>    N     Mean   Median      SD      Min     Max
-#>   92  -0.0314  -0.0657  0.3047  -0.5076  0.6918
-#> 
-#> Summary of Individual R-Squared's
-#>    N    Mean  Median      SD     Min     Max
-#>   92  0.3783  0.3257  0.2866  0.0049  0.9976
 
 # Can request more detailed printouts
 # print(dfm_summary, compact = 1)
@@ -208,127 +107,51 @@ print(dfm_summary) # Large model with > 40 series: defaults to compact = 2
 
 Apart from the model summary, the *dfm* methods `residuals()` and `fitted()` return observation residuals and fitted values from the model. The default format is a plain matrix, but the functions also have an argument to return data in the original (input) format.
 
-
-``` r
+```{r}
 plot(resid(model_m, orig.format = TRUE), lwd = 1)
-```
-
-<img src="figure/unnamed-chunk-10-1.png" width="100%" height="auto" />
-
-``` r
 plot(fitted(model_m, orig.format = TRUE), lwd = 1)
 ```
-
-<img src="figure/unnamed-chunk-10-2.png" width="100%" height="auto" />
 
 
 
 Another way to examine the factor model visually is to plot the Quasi-Maximum-Likelihood (QML) factor estimates against PCA and Two-Step estimates following Doz, Giannone and Reichlin (2011)^[Doz, C., Giannone, D., & Reichlin, L. (2011). A two-step estimator for large approximate dynamic factor models based on Kalman filtering. *Journal of Econometrics, 164*(1), 188-205.], where the Kalman Filter and Smoother is run only once. Both estimates are also computed by `DFM()` during EM estimation and can also be visualized with `plot.dfm`.
 
-
-``` r
+```{r}
 plot(model_m, method = "all", type = "individual")
 ```
-
-<img src="figure/unnamed-chunk-11-1.png" width="100%" height="auto" />
 
 The plot with the various estimates shows that the QML estimates are more volatile in the initial periods where there are many missing series, but less volatile in the latter periods. In general, QML estimates may not always be superior across the entire data range to Two-Step and PCA estimates. Often, Two-Step estimates also provide similar forecasting performance, and are much faster to estimate using `DFM(BM14_M_diff, r = 4, p = 3, em.method = "none")`.
 
 The factor estimates themselves can be extracted in a data frame using `as.data.frame()`, which also provides various options regarding the estimates retained and the format of the frame. It is also possible to add a time variable from the original data (the default is a sequence of integers).
 
-
-``` r
+```{r}
 # Default: all estimates in long format
 head(as.data.frame(model_m, time = index(BM14_M_diff)))
-#>   Method Factor       Time      Value
-#> 1    PCA     f1 1980-02-29  1.2337752
-#> 2    PCA     f1 1980-03-31  0.3211015
-#> 3    PCA     f1 1980-04-30 -1.5238335
-#> 4    PCA     f1 1980-05-31 -1.5166031
-#> 5    PCA     f1 1980-06-30 -0.2327899
-#> 6    PCA     f1 1980-07-31  0.3928228
 ```
 
 ## Forecasting
 
 DFM forecasts can be obtained with the `predict()` method, which dynamically forecasts the factors using the transition equation (default 10 periods), and then also predicts data forecasts using the observation equation. Objects are of class 'dfm_forecast'.
 
-
-``` r
+```{r}
 # 12-period ahead DFM forecast
 fc <- predict(model_m, h = 12)
 print(fc)
-#> 12 Step Ahead Forecast from Dynamic Factor Model
-#> 
-#> Factor Forecasts
-#>        f1     f2      f3      f4
-#> 1  4.4600 0.7991 -0.0984 -0.2691
-#> 2  4.1010 0.5169  0.8266 -0.3904
-#> 3  2.3757 0.4360  0.9863  0.5066
-#> 4  3.0793 0.7497 -0.7329  0.0622
-#> 5  1.6748 0.2933  0.3500  0.3795
-#> 6  1.3739 0.3297  0.0878  0.2092
-#> 7  1.4066 0.4247 -0.2905  0.0570
-#> 8  0.7346 0.1105  0.2751  0.2562
-#> 9  0.8001 0.2191 -0.1221  0.0672
-#> 10 0.5777 0.1661 -0.0318  0.0882
-#> 11 0.3690 0.0714  0.0985  0.1017
-#> 12 0.4077 0.1229 -0.0829  0.0208
-#> 
-#> Series Forecasts
-#>    ip_total ip_tot_cstr ip_tot_cstr_en ip_constr ip_im_goods ip_capital ip_d_cstr ip_nd_cons
-#> 1    0.9055      0.9232         0.9581    0.2297      0.9016     0.7424    0.6656     0.5287
-#>      ip_en ip_en_2 ip_manuf ip_metals ip_chemicals ip_electric ip_machinery ip_paper
-#> 1   0.0300  0.0720   0.9686    0.6876       0.6051      0.7846       0.6228   0.5709
-#>    ip_plastic new_cars orders ret_turnover_defl ecs_ec_sent_ind ecs_ind_conf
-#> 1      0.7460   0.1033 0.5756            0.0163          0.9179       0.9392
-#>    ecs_ind_order_book ecs_ind_stocks ecs_ind_prod_exp ecs_ind_prod_rec_m ecs_ind_x_orders
-#> 1              0.8858        -0.6206           0.7372             0.6142           0.7822
-#>    ecs_ind_empl_exp ecs_cons_conf ecs_cons_sit_over_next_12 ecs_cons_exp_unempl
-#> 1            0.6932        0.6451                    0.5826             -0.5907
-#>    ecs_cons_gen_last_12m ecs_cstr_conf ecs_cstr_order_books ecs_cstr_empl_exp
-#> 1                 0.6125        0.3601               0.2798            0.2974
-#>    ecs_cstr_prod_recent ecs_ret_tr_conf ecs_ret_tr_bus_sit ecs_ret_tr_stocks
-#> 1                0.2569          0.2343             0.1304           -0.0438
-#>    ecs_ret_tr_exp_bus ecs_ret_tr_empl ecs_serv_conf ecs_serv_empl_exp pms_comp_output
-#> 1              0.2883          0.1717        0.5419            0.4216          0.5936
-#>    pms_comp_empl pms_pmi pms_manuf_empl pms_manuf_output pms_manuf_product pms_serv_out
-#> 1         0.5765  0.6576         0.6838           0.5825            0.3972       0.4842
-#>    pms_serv_empl pms_serv_new_bus pms_serv_product     urx empl_total empl_tot_xc empl_cstr
-#> 1         0.3745           0.5237           0.3316 -0.4692     0.4548      0.2340    0.5819
-#>    empl_manuf extra_ea_trade_exp_val intra_ea_trade_exp_val extra_ea_trade_imp_val
-#> 1      0.2549                 0.3973                 0.3731                 0.2520
-#>    intra_ea_trade_imp_val  us_ip  us_urx us_empl us_retail_sales us_ip_manuf_exp us_cons_exp
-#> 1                  0.3477 0.4234 -0.3765  0.2862          0.2671          0.1714      0.1539
-#>    us_r3_m us_r10_year
-#> 1   0.3824      0.3136
-#>  [ reached 'max' / getOption("max.print") -- omitted 11 rows and 22 columns ]
 ```
 
 These forecasts can also be visualized using a plot method. By default the entire series history is plotted along with the forecasts, thus it is often helpful to restrict the plot range. As with any stationary autoregressive model, the forecasts tend to zero quite quickly^[Depending also on the lag-order of the factor-VAR. Higher lag-orders produce more interesting forecast dynamics.].
-
-``` r
+```{r}
 # Setting an appropriate plot range to see the forecast
 plot(fc, xlim = c(320, 370))
 ```
-
-<img src="figure/unnamed-chunk-14-1.png" width="100%" height="auto" />
 
 By default, `predict()` uses the QML factor estimates (if available). We can however also predict with PCA or TwoStep estimates using, e.g., `predict(model_m, h = 12, method = "2s")`.
 
 The forecasts can be retrieved in data frame using `as.data.frame()`. Again the method has various arguments to control the output (factors, data, or both --- default factors) and the format of the frame.
 
-
-``` r
+```{r}
 # Factor forecasts in wide format
 head(as.data.frame(fc, pivot = "wide"))
-#>   Time Forecast          f1          f2        f3         f4
-#> 1    1    FALSE   6.8690809 -1.34246514  3.441482  1.0535954
-#> 2    2    FALSE  -3.7001043 -8.58051260 -6.924850  6.8407922
-#> 3    3    FALSE -17.3898728 -0.39832405 -5.701603 -4.0826421
-#> 4    4    FALSE -17.7877846  3.48235068 -1.198272 -9.8978618
-#> 5    5    FALSE  -8.2124387  0.74239760  4.057838 -5.5472619
-#> 6    6    FALSE  -0.3234256 -0.09166592  5.033747 -0.9623612
 ```
 
 ## Estimation with Mixed Frequency
@@ -342,18 +165,9 @@ BM14 use the approximation of Mariano and Murasawa (2003) to construct a monthly
 
 In the absence of such adjustments to the algorithm, or other methods of interpolating quarterly data, a very simple way to increase the weight of these series in the estimation is to duplicate them in the dataset. Such duplication can be mechanical (e.g. duplicate quarterly series 2 times in monthly dataset), but should ideally be based on considerations about the quality of the signal stemming from different quarterly series (i.e. informative series should be duplicated more).  -->
 
-
-``` r
+```{r MQ}
 # Quarterly series from BM14
 head(BM14_Q, 3)
-#>                 gdp priv_cons   invest   export   import     empl prductivity capacity
-#> 1980-03-31 2.632160  2.592850 2.516355 2.506821 2.505304 2.457959          NA       NA
-#> 1980-06-30 2.631821  2.592391 2.514986 2.503178 2.503075 2.458010          NA       NA
-#> 1980-09-30 2.631780  2.592931 2.514673 2.502228 2.503705 2.458013          NA       NA
-#>              gdp_us
-#> 1980-03-31 2.161499
-#> 1980-06-30 2.159112
-#> 1980-09-30 2.158896
 # Pre-processing the data
 BM14_Q[, BM14_Models$log_trans[BM14_Models$freq == "Q"]] %<>% log()
 BM14_Q_diff <- diff(BM14_Q)
@@ -362,28 +176,9 @@ BM14_diff <- merge(BM14_M_diff, BM14_Q_diff)
 
 # Estimating the model with 5 factors and 3 lags using BM14's EM algorithm
 model_mq <- DFM(BM14_diff, r = 5, p = 3, quarterly.vars = colnames(BM14_Q))
-#> Converged after 33 iterations.
 print(model_mq)
-#> Mixed Frequency Dynamic Factor Model
-#> n = 101, nm = 92, nq = 9, T = 356, r = 5, p = 3
-#> %NA = 29.7363, %NAm = 25.8366
-#> 
-#> Factor Transition Matrix [A]
-#>      L1.f1   L1.f2   L1.f3   L1.f4   L1.f5   L2.f1   L2.f2   L2.f3   L2.f4   L2.f5   L3.f1
-#> f1  0.4038 -0.2905  0.5106 -0.3668  0.3582 -0.0201  0.1704 -0.1055 -0.3729 -0.2237  0.3403
-#> f2 -0.1359  0.4813 -0.1610 -0.0835  0.0551  0.0894 -0.0312  0.0059 -0.0330  0.2461  0.1384
-#> f3  0.1962  0.0884  0.3432  0.1038 -0.0821 -0.1337 -0.0121 -0.2337  0.0901 -0.1168 -0.0139
-#> f4 -0.2052 -0.1555  0.1237 -0.0669  0.5170  0.0329 -0.0413  0.0692 -0.2223 -0.1077  0.0239
-#>      L3.f2   L3.f3   L3.f4   L3.f5
-#> f1 -0.0910  0.0940  0.0106  0.1322
-#> f2  0.2373  0.1304 -0.1657  0.0100
-#> f3 -0.1081  0.1836  0.1080 -0.0727
-#> f4 -0.1317 -0.0602  0.1138 -0.1394
-#>  [ reached 'max' / getOption("max.print") -- omitted 1 row ]
 plot(model_mq)
 ```
-
-<img src="figure/MQ-1.png" width="100%" height="auto" />
 
 ## Modeling AR(1) Idiosyncratic Errors
 
@@ -391,67 +186,37 @@ By default, observation errors are assumed to be white noise. However, in practi
 
 This option can be combined with mixed-frequency estimation. Since estimating AR(1) errors increases runtime, the examples below use the medium-sized dataset.
 
-
-``` r
+```{r MQ_AR1}
 BM14_med_diff <- BM14_diff[, BM14_Models$medium]
 Q_vars_med <- intersect(colnames(BM14_med_diff), colnames(BM14_Q))
 
 # Mixed-frequency model with AR(1) idiosyncratic errors
 model_mq_ar1 <- DFM(BM14_med_diff, r = 5, p = 3, idio.ar1 = TRUE,
                     quarterly.vars = Q_vars_med)
-#> Converged after 26 iterations.
 print(model_mq_ar1)
-#> Mixed Frequency Dynamic Factor Model
-#> n = 48, nm = 39, nq = 9, T = 356, r = 5, p = 3
-#> %NA = 32.6135, %NAm = 24.0781
-#>    with AR(1) errors: mean(abs(rho)) = 0.262 
-#> 
-#> Factor Transition Matrix [A]
-#>      L1.f1   L1.f2  L1.f3   L1.f4   L1.f5   L2.f1   L2.f2   L2.f3   L2.f4   L2.f5   L3.f1
-#> f1  1.3215 -0.5413 0.1691 -0.5893  0.1477 -0.5107  0.5863  0.1646  0.1568 -0.1492  0.0185
-#> f2 -0.1156  0.4177 0.1762 -0.2619  0.0895  0.0889 -0.0066  0.0144 -0.0043  0.0285 -0.2113
-#> f3 -0.2913  0.3117 0.3426  0.3239 -0.2416  1.1182 -1.0212 -0.1275 -0.4937 -0.1119 -0.9063
-#> f4  0.1784 -0.0789 0.1831  0.0182 -0.2895 -0.3356  0.2854 -0.0259 -0.0285 -0.0916  0.1251
-#>      L3.f2   L3.f3   L3.f4   L3.f5
-#> f1 -0.0343 -0.0809 -0.0262 -0.1292
-#> f2  0.3440 -0.0407  0.1760 -0.1395
-#> f3  0.6023  0.2533  0.0171 -0.1862
-#> f4 -0.0359 -0.0976  0.1304  0.1229
-#>  [ reached 'max' / getOption("max.print") -- omitted 1 row ]
 ```
 
 The estimated AR(1) coefficients ($\rho$) for each series are stored in the `rho` element of the model object. For most series, the AR(1) coefficients are small, indicating little serial correlation in the idiosyncratic errors after accounting for the common factors.
 
-
-``` r
+```{r}
 # AR(1) coefficients for the first 10 series
 head(model_mq_ar1$rho, 10)
-#>       ip_tot_cstr         ip_constr       ip_im_goods        ip_capital         ip_d_cstr 
-#>        -0.4930859        -0.3859705        -0.2902739        -0.3914880        -0.2668469 
-#>        ip_nd_cons             ip_en          new_cars            orders ret_turnover_defl 
-#>        -0.3202793        -0.3268949        -0.4200600        -0.4316412        -0.4973194
 
 # Summary of AR(1) coefficients
 summary(model_mq_ar1$rho)
-#>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-#> -0.60839 -0.28946 -0.13638 -0.08143  0.19829  0.67993
 ```
 
 The estimated observation errors are available in the `e` element.
 
-
-``` r
+```{r}
 # Dimension of estimated errors
 dim(model_mq_ar1$e)
-#> [1] 356  48
 
 # Plot estimated errors for first 5 monthly series
 matplot(model_mq_ar1$e[-(1:120), 1:5], type = "l", lty = 1,
         main = "Estimated Idiosyncratic Errors (First 5 Series)",
         xlab = "Time", ylab = "Error")
 ```
-
-<img src="figure/unnamed-chunk-17-1.png" width="100%" height="auto" />
 
 In general, Doz et al. (2011, 2012) show that in the presence of serial correlation, the factors are still consistently estimated as $n, T \to \infty$ using an exact DFM specification. Thus modeling serial correlation is particularly important in smaller samples. Banbura & Modugno (2014) also show that modeling the serial correlation improves forecast accuracy, but only at short horizons.
 
@@ -461,45 +226,17 @@ The `news()` function decomposes forecast revisions into contributions from new 
 
 Below, we use a medium-size mixed-frequency dataset, create a previous vintage, and compute news impacts for the quarterly targets.
 
-
-``` r
+```{r news}
 # Create old vintage with ragged edge
 model_mq_ar1$rm.rows # Previous model removed first row
-#> [1] 1
 X_old <- BM14_med_diff[-model_mq_ar1$rm.rows, ]
 tail(X_old, 3) # See current ragged edge
-#>            ip_tot_cstr    ip_constr  ip_im_goods   ip_capital    ip_d_cstr    ip_nd_cons
-#> 2009-07-31 0.000285243 -0.002623227 0.0020305483 -0.002454670 0.0009548859  0.0004096236
-#>                   ip_en      new_cars      orders ret_turnover_defl ecs_ec_sent_ind
-#> 2009-07-31 0.0001183144 -0.0005719138 0.002943768     -0.0001764322        2.800003
-#>            ecs_ind_conf ecs_ind_prod_exp ecs_ind_x_orders ecs_ind_empl_exp ecs_cons_conf
-#> 2009-07-31     2.100000         2.400001         1.100002        1.7999992           2.1
-#>            ecs_cstr_conf ecs_ret_tr_conf ecs_serv_conf ecs_serv_empl_exp pms_pmi pms_serv_out
-#> 2009-07-31     0.2999992       3.6999998      2.299999               1.5    3.63         1.04
-#>                  urx empl_total extra_ea_trade_exp_val extra_ea_trade_imp_val       us_ip
-#> 2009-07-31 0.1056456         NA           0.0007397515          -5.587142e-05 0.001372389
-#>            us_ip_manuf_exp us_cons_exp           m3         loans     ir_long    ir_short
-#> 2009-07-31               6        -6.0 3.041118e-04 -8.497176e-05 -0.20008969 -0.25295257
-#>                  eer     exr_usd      euro325       dow_j   raw_mat_en raw_mat_oil_fwd gdp
-#> 2009-07-31 0.1361271 0.007124111 0.0006282595 0.000502753 -0.001999095     -0.01216823  NA
-#>            priv_cons invest export import empl prductivity   capacity gdp_us
-#> 2009-07-31        NA     NA     NA     NA   NA          NA         NA     NA
-#>  [ reached 'max' / getOption("max.print") -- omitted 2 rows ]
 (obscurr <- colnames(X_old)[is.finite(tail(X_old, 1))]) # Observe current
-#>  [1] "new_cars"          "ecs_ec_sent_ind"   "ecs_ind_conf"      "ecs_ind_prod_exp" 
-#>  [5] "ecs_ind_x_orders"  "ecs_ind_empl_exp"  "ecs_cons_conf"     "ecs_cstr_conf"    
-#>  [9] "ecs_ret_tr_conf"   "ecs_serv_conf"     "ecs_serv_empl_exp" "pms_pmi"          
-#> [13] "pms_serv_out"      "us_ip_manuf_exp"   "us_cons_exp"       "ir_long"          
-#> [17] "ir_short"          "eer"               "exr_usd"           "euro325"          
-#> [21] "dow_j"             "raw_mat_en"        "raw_mat_oil_fwd"   "capacity"
 # Set some observed values to NA
 set.seed(1)
 X_old[nrow(X_old), sample(obscurr, 10)] <- NA
 # Also check series missing the previous observation and set some to NA
 (obsprev <- colnames(X_old)[is.finite(tail(X_old, 2)[1, ])] |> setdiff(obscurr))
-#>  [1] "ip_tot_cstr"       "ip_im_goods"       "ip_capital"        "ip_d_cstr"        
-#>  [5] "ip_nd_cons"        "ip_en"             "ret_turnover_defl" "urx"              
-#>  [9] "us_ip"             "m3"                "loans"
 set.seed(1)
 X_old[nrow(X_old), sample(obsprev, 4)] <- NA
 
@@ -508,75 +245,20 @@ model_mq_ar1_old <- model_mq_ar1$call
 model_mq_ar1_old$X <- quote(X_old)
 model_mq_ar1_old$max.missing = 1 # No further row removals
 print(model_mq_ar1_old)
-#> DFM(X = X_old, r = 5, p = 3, idio.ar1 = TRUE, quarterly.vars = Q_vars_med, 
-#>     max.missing = 1)
 model_mq_ar1_old <- eval(model_mq_ar1_old)
-#> Converged after 26 iterations.
 
 # Compute news for "gdp" variable at the last period (t.fcst = nrow(X_old))
 news_gdp <- news(model_mq_ar1_old, model_mq_ar1, target.vars = "gdp")
 print(news_gdp)
-#> DFM News
-#> Target variable: gdp 
-#> Target time: 356 
-#> Old forecast: 1e-04 
-#> New forecast: 1e-04 
-#> Revision: 0 
-#> Standardized: FALSE
 # Verifying the news decomposition
 na.omit(news_gdp$news_df) |>
   transform(test1 = news - (actual - forecast), test2 = impact - news * gain)
-#>               series        actual      forecast          news          gain      gain_std
-#> 8           new_cars -0.0002384109 -0.0002167886 -2.162227e-05  7.379485e-04  1.032980e-06
-#> 11   ecs_ec_sent_ind  2.0000000000  1.9544155170  4.558448e-02  7.667486e-07  1.302062e-06
-#> 13  ecs_ind_prod_exp  0.5000000000  2.6387291274 -2.138729e+00 -9.684502e-07 -2.125806e-06
-#> 14  ecs_ind_x_orders  1.5000000000  0.9235600067  5.764400e-01  1.336228e-06  3.272888e-06
-#> 16     ecs_cons_conf  3.0000000000  1.4263128445  1.573687e+00  6.372557e-07  9.474786e-07
-#> 20 ecs_serv_empl_exp  1.3999996185  0.6240537062  7.759459e-01  3.695631e-07  9.496770e-07
-#> 28   us_ip_manuf_exp -7.0000000000  6.2379822501 -1.323798e+01 -1.117836e-07 -9.664301e-07
-#>           impact test1 test2
-#> 8  -1.595612e-08     0     0
-#> 11  3.495184e-08     0     0
-#> 13  2.071253e-06     0     0
-#> 14  7.702555e-07     0     0
-#> 16  1.002841e-06     0     0
-#> 20  2.867610e-07     0     0
-#> 28  1.479789e-06     0     0
-#>  [ reached 'max' / getOption("max.print") -- omitted 3 rows ]
 
 # Now computing news for all quarterly variables
 news_qvars <- news(model_mq_ar1_old, model_mq_ar1, target.vars = Q_vars_med)
 print(news_qvars)
-#> DFM News (Multiple Targets)
-#> Target time: 356 
-#> Targets: 9 
-#> Standardized: FALSE 
-#>               y_old   y_new revision
-#> gdp          0.0001  0.0001   0.0000
-#> priv_cons    0.0000  0.0000   0.0000
-#> invest      -0.0002 -0.0002   0.0000
-#> export       0.0003  0.0003   0.0000
-#> import      -0.0001 -0.0001   0.0000
-#> empl        -0.0001 -0.0001   0.0000
-#> prductivity  0.5660  0.5803   0.0143
-#> capacity    -0.8002 -0.8000   0.0002
-#> gdp_us       0.0004  0.0004   0.0000
 # Data frame with details
 as.data.frame(news_qvars) |> na.omit() |> head()
-#>    target            series        actual      forecast          news          gain
-#> 8     gdp          new_cars -0.0002384109 -0.0002167886 -2.162227e-05  7.379485e-04
-#> 11    gdp   ecs_ec_sent_ind  2.0000000000  1.9544155170  4.558448e-02  7.667486e-07
-#> 13    gdp  ecs_ind_prod_exp  0.5000000000  2.6387291274 -2.138729e+00 -9.684502e-07
-#> 14    gdp  ecs_ind_x_orders  1.5000000000  0.9235600067  5.764400e-01  1.336228e-06
-#> 16    gdp     ecs_cons_conf  3.0000000000  1.4263128445  1.573687e+00  6.372557e-07
-#> 20    gdp ecs_serv_empl_exp  1.3999996185  0.6240537062  7.759459e-01  3.695631e-07
-#>         gain_std        impact
-#> 8   1.032980e-06 -1.595612e-08
-#> 11  1.302062e-06  3.495184e-08
-#> 13 -2.125806e-06  2.071253e-06
-#> 14  3.272888e-06  7.702555e-07
-#> 16  9.474786e-07  1.002841e-06
-#> 20  9.496770e-07  2.867610e-07
 ```
 
 Apart from the overall forecast revision, the `news()` function measures, for each series, the impact on the revision, which is a function of the news (innovation) multiplied by the gain (weight). The formula `impact` $=$ `news` $\times$ `gain` always holds, and `news` $=$ `actual` $-$ `forecast` holds if there is only one change to the series between vintages.
@@ -609,5 +291,7 @@ Onatski, A. (2010). Determining the number of factors from empirical distributio
 
 Stock, J. H., & Watson, M. W. (2016). Dynamic Factor Models, Factor-Augmented Vector Autoregressions, and Structural Vector Autoregressions in Macroeconomics. *Handbook of Macroeconomics, 2*, 415–525.
 
-
+```{r, include=FALSE}
+options(opt)
+```
 
