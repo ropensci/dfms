@@ -2,7 +2,9 @@
 title: "Introduction to dfms"
 author: "Sebastian Krantz"
 date: "2026-06-18"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    self_contained: false
 vignette: >
   %\VignetteIndexEntry{Introduction to dfms}
   %\VignetteEngine{knitr::rmarkdown}
@@ -27,7 +29,7 @@ dim(BM14_M)
 range(index(BM14_M))
 #> [1] "1980-01-31" "2009-09-30"
 head(colnames(BM14_M))
-#> [1] "ip_total"       "ip_tot_cstr"    "ip_tot_cstr_en" "ip_constr"      "ip_im_goods"   
+#> [1] "ip_total"       "ip_tot_cstr"    "ip_tot_cstr_en" "ip_constr"      "ip_im_goods"
 #> [6] "ip_capital"
 plot(scale(BM14_M), lwd = 1)
 ```
@@ -79,8 +81,8 @@ ic <- ICr(BM14_M_diff)
 #> Missing values detected: imputing data with tsnarmimp() with default settings
 print(ic)
 #> Optimal Number of Factors (r) from Bai and Ng (2002) Criteria
-#> 
-#> IC1 IC2 IC3 
+#>
+#> IC1 IC2 IC3
 #>   7   7  13
 plot(ic)
 ```
@@ -103,9 +105,9 @@ Based on both the information criteria and the Screeplot, I gauge that a model w
 # Using vars::VARselect() with 4 principal components to estimate the VAR lag order
 vars::VARselect(ic$F_pca[, 1:4])
 #> $selection
-#> AIC(n)  HQ(n)  SC(n) FPE(n) 
-#>      4      3      3      4 
-#> 
+#> AIC(n)  HQ(n)  SC(n) FPE(n)
+#>      4      3      3      4
+#>
 #> $criteria
 #>                 1          2          3          4          5          6          7          8
 #> AIC(n)   5.794184   5.585334   5.400083   5.370339   5.394026   5.379200   5.407519   5.403436
@@ -132,7 +134,7 @@ model_m <- DFM(BM14_M_diff, r = 4, p = 3)
 #> Converged after 26 iterations.
 print(model_m)
 #> Dynamic Factor Model: n = 92, T = 356, r = 4, p = 3, %NA = 25.8366
-#> 
+#>
 #> Factor Transition Matrix [A]
 #>      L1.f1   L1.f2   L1.f3   L1.f4   L2.f1   L2.f2   L2.f3   L2.f4   L3.f1   L3.f2   L3.f3
 #> f1  0.4139 -0.0122  0.7875  0.3325 -0.0914 -0.1474  0.1859 -0.3054  0.3228 -0.0710  0.0023
@@ -157,16 +159,16 @@ dfm_summary <- summary(model_m)
 #> Warning in sqrt(1 - acm^2): NaNs produced
 print(dfm_summary) # Large model with > 40 series: defaults to compact = 2
 #> Dynamic Factor Model: n = 92, T = 356, r = 4, p = 3, %NA = 25.8366
-#> 
+#>
 #> Call:  DFM(X = BM14_M_diff, r = 4, p = 3)
-#> 
+#>
 #> Summary Statistics of Factors [F]
 #>       N     Mean   Median      SD       Min      Max
 #> f1  356   -0.054   0.3333  4.6456  -20.9539  13.2308
 #> f2  356   -0.031  -0.0728  2.6379    -9.317   6.9993
 #> f3  356  -0.0504   0.0814  3.5123    -13.65   17.588
 #> f4  356  -0.1345  -0.1719  2.4508   -9.8979  10.2893
-#> 
+#>
 #> Factor Transition Matrix [A]
 #>      L1.f1    L1.f2    L1.f3   L1.f4     L2.f1     L2.f2    L2.f3    L2.f4   L3.f1    L3.f2
 #> f1  0.4139 -0.01222  0.78747  0.3325 -0.091402 -0.147358  0.18593 -0.30539  0.3228 -0.07104
@@ -178,25 +180,25 @@ print(dfm_summary) # Large model with > 40 series: defaults to compact = 2
 #> f2  0.054876 -0.038129
 #> f3  0.168495  0.119479
 #> f4 -0.106921  0.007872
-#> 
+#>
 #> Factor Covariance Matrix [cov(F)]
 #>           f1        f2        f3        f4
 #> f1  21.5818    1.9628*  -4.9668*  -1.5043*
 #> f2   1.9628*   6.9585   -2.7590*  -1.5049*
 #> f3  -4.9668*  -2.7590*  12.3359    2.9879*
-#> f4  -1.5043*  -1.5049*   2.9879*   6.0067 
-#> 
+#> f4  -1.5043*  -1.5049*   2.9879*   6.0067
+#>
 #> Factor Transition Error Covariance Matrix [Q]
 #>         u1      u2      u3      u4
 #> u1  9.3698  0.3902 -2.7169 -2.0670
 #> u2  0.3902  5.3407 -1.0810 -0.7602
 #> u3 -2.7169 -1.0810  7.2794  1.2365
 #> u4 -2.0670 -0.7602  1.2365  4.1717
-#> 
+#>
 #> Summary of Residual AR(1) Serial Correlations
 #>    N     Mean   Median      SD      Min     Max
 #>   92  -0.0314  -0.0657  0.3047  -0.5076  0.6918
-#> 
+#>
 #> Summary of Individual R-Squared's
 #>    N    Mean  Median      SD     Min     Max
 #>   92  0.3783  0.3257  0.2866  0.0049  0.9976
@@ -259,7 +261,7 @@ DFM forecasts can be obtained with the `predict()` method, which dynamically for
 fc <- predict(model_m, h = 12)
 print(fc)
 #> 12 Step Ahead Forecast from Dynamic Factor Model
-#> 
+#>
 #> Factor Forecasts
 #>        f1     f2      f3      f4
 #> 1  4.4600 0.7991 -0.0984 -0.2691
@@ -274,7 +276,7 @@ print(fc)
 #> 10 0.5777 0.1661 -0.0318  0.0882
 #> 11 0.3690 0.0714  0.0985  0.1017
 #> 12 0.4077 0.1229 -0.0829  0.0208
-#> 
+#>
 #> Series Forecasts
 #>    ip_total ip_tot_cstr ip_tot_cstr_en ip_constr ip_im_goods ip_capital ip_d_cstr ip_nd_cons
 #> 1    0.9055      0.9232         0.9581    0.2297      0.9016     0.7424    0.6656     0.5287
@@ -367,7 +369,7 @@ print(model_mq)
 #> Mixed Frequency Dynamic Factor Model
 #> n = 101, nm = 92, nq = 9, T = 356, r = 5, p = 3
 #> %NA = 29.7363, %NAm = 25.8366
-#> 
+#>
 #> Factor Transition Matrix [A]
 #>      L1.f1   L1.f2   L1.f3   L1.f4   L1.f5   L2.f1   L2.f2   L2.f3   L2.f4   L2.f5   L3.f1
 #> f1  0.4038 -0.2905  0.5106 -0.3668  0.3582 -0.0201  0.1704 -0.1055 -0.3729 -0.2237  0.3403
@@ -404,8 +406,8 @@ print(model_mq_ar1)
 #> Mixed Frequency Dynamic Factor Model
 #> n = 48, nm = 39, nq = 9, T = 356, r = 5, p = 3
 #> %NA = 32.6135, %NAm = 24.0781
-#>    with AR(1) errors: mean(abs(rho)) = 0.262 
-#> 
+#>    with AR(1) errors: mean(abs(rho)) = 0.262
+#>
 #> Factor Transition Matrix [A]
 #>      L1.f1   L1.f2  L1.f3   L1.f4   L1.f5   L2.f1   L2.f2   L2.f3   L2.f4   L2.f5   L3.f1
 #> f1  1.3215 -0.5413 0.1691 -0.5893  0.1477 -0.5107  0.5863  0.1646  0.1568 -0.1492  0.0185
@@ -426,14 +428,14 @@ The estimated AR(1) coefficients ($\rho$) for each series are stored in the `rho
 ``` r
 # AR(1) coefficients for the first 10 series
 head(model_mq_ar1$rho, 10)
-#>       ip_tot_cstr         ip_constr       ip_im_goods        ip_capital         ip_d_cstr 
-#>        -0.4930859        -0.3859705        -0.2902739        -0.3914880        -0.2668469 
-#>        ip_nd_cons             ip_en          new_cars            orders ret_turnover_defl 
+#>       ip_tot_cstr         ip_constr       ip_im_goods        ip_capital         ip_d_cstr
+#>        -0.4930859        -0.3859705        -0.2902739        -0.3914880        -0.2668469
+#>        ip_nd_cons             ip_en          new_cars            orders ret_turnover_defl
 #>        -0.3202793        -0.3268949        -0.4200600        -0.4316412        -0.4973194
 
 # Summary of AR(1) coefficients
 summary(model_mq_ar1$rho)
-#>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+#>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.
 #> -0.60839 -0.28946 -0.13638 -0.08143  0.19829  0.67993
 ```
 
@@ -486,19 +488,19 @@ tail(X_old, 3) # See current ragged edge
 #> 2009-07-31        NA     NA     NA     NA   NA          NA         NA     NA
 #>  [ reached 'max' / getOption("max.print") -- omitted 2 rows ]
 (obscurr <- colnames(X_old)[is.finite(tail(X_old, 1))]) # Observe current
-#>  [1] "new_cars"          "ecs_ec_sent_ind"   "ecs_ind_conf"      "ecs_ind_prod_exp" 
-#>  [5] "ecs_ind_x_orders"  "ecs_ind_empl_exp"  "ecs_cons_conf"     "ecs_cstr_conf"    
-#>  [9] "ecs_ret_tr_conf"   "ecs_serv_conf"     "ecs_serv_empl_exp" "pms_pmi"          
-#> [13] "pms_serv_out"      "us_ip_manuf_exp"   "us_cons_exp"       "ir_long"          
-#> [17] "ir_short"          "eer"               "exr_usd"           "euro325"          
+#>  [1] "new_cars"          "ecs_ec_sent_ind"   "ecs_ind_conf"      "ecs_ind_prod_exp"
+#>  [5] "ecs_ind_x_orders"  "ecs_ind_empl_exp"  "ecs_cons_conf"     "ecs_cstr_conf"
+#>  [9] "ecs_ret_tr_conf"   "ecs_serv_conf"     "ecs_serv_empl_exp" "pms_pmi"
+#> [13] "pms_serv_out"      "us_ip_manuf_exp"   "us_cons_exp"       "ir_long"
+#> [17] "ir_short"          "eer"               "exr_usd"           "euro325"
 #> [21] "dow_j"             "raw_mat_en"        "raw_mat_oil_fwd"   "capacity"
 # Set some observed values to NA
 set.seed(1)
 X_old[nrow(X_old), sample(obscurr, 10)] <- NA
 # Also check series missing the previous observation and set some to NA
 (obsprev <- colnames(X_old)[is.finite(tail(X_old, 2)[1, ])] |> setdiff(obscurr))
-#>  [1] "ip_tot_cstr"       "ip_im_goods"       "ip_capital"        "ip_d_cstr"        
-#>  [5] "ip_nd_cons"        "ip_en"             "ret_turnover_defl" "urx"              
+#>  [1] "ip_tot_cstr"       "ip_im_goods"       "ip_capital"        "ip_d_cstr"
+#>  [5] "ip_nd_cons"        "ip_en"             "ret_turnover_defl" "urx"
 #>  [9] "us_ip"             "m3"                "loans"
 set.seed(1)
 X_old[nrow(X_old), sample(obsprev, 4)] <- NA
@@ -508,7 +510,7 @@ model_mq_ar1_old <- model_mq_ar1$call
 model_mq_ar1_old$X <- quote(X_old)
 model_mq_ar1_old$max.missing = 1 # No further row removals
 print(model_mq_ar1_old)
-#> DFM(X = X_old, r = 5, p = 3, idio.ar1 = TRUE, quarterly.vars = Q_vars_med, 
+#> DFM(X = X_old, r = 5, p = 3, idio.ar1 = TRUE, quarterly.vars = Q_vars_med,
 #>     max.missing = 1)
 model_mq_ar1_old <- eval(model_mq_ar1_old)
 #> Converged after 26 iterations.
@@ -517,11 +519,11 @@ model_mq_ar1_old <- eval(model_mq_ar1_old)
 news_gdp <- news(model_mq_ar1_old, model_mq_ar1, target.vars = "gdp")
 print(news_gdp)
 #> DFM News
-#> Target variable: gdp 
-#> Target time: 356 
-#> Old forecast: 1e-04 
-#> New forecast: 1e-04 
-#> Revision: 0 
+#> Target variable: gdp
+#> Target time: 356
+#> Old forecast: 1e-04
+#> New forecast: 1e-04
+#> Revision: 0
 #> Standardized: FALSE
 # Verifying the news decomposition
 na.omit(news_gdp$news_df) |>
@@ -548,9 +550,9 @@ na.omit(news_gdp$news_df) |>
 news_qvars <- news(model_mq_ar1_old, model_mq_ar1, target.vars = Q_vars_med)
 print(news_qvars)
 #> DFM News (Multiple Targets)
-#> Target time: 356 
-#> Targets: 9 
-#> Standardized: FALSE 
+#> Target time: 356
+#> Targets: 9
+#> Standardized: FALSE
 #>               y_old   y_new revision
 #> gdp          0.0001  0.0001   0.0000
 #> priv_cons    0.0000  0.0000   0.0000
